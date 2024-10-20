@@ -1,0 +1,174 @@
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+
+class Paddle {
+    int x, y;
+    final int WIDTH = 10, HEIGHT = 100;
+    int speed = 10;
+
+    // Constructor for the paddle
+    Paddle(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    // Move the paddle up
+    public void moveUp() {
+        if (y > 0) {
+            y -= speed;
+        }
+    }
+
+    // Move the paddle down
+    public void moveDown() {
+        if (y + HEIGHT < 400) {
+            y += speed;
+        }
+    }
+
+    // Draw the paddle
+    public void draw(Graphics g) {
+        g.fillRect(x, y, WIDTH, HEIGHT);
+    }
+}
+
+class Ball {
+    int x, y, width = 20, height = 20;
+    int xVelocity = 5, yVelocity = 5;
+
+    // Constructor for the ball
+    Ball(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    // Update ball position
+    public void update() {
+        x += xVelocity;
+        y += yVelocity;
+
+        // Bounce off top and bottom walls
+        if (y < 0 || y > 380) {
+            yVelocity = -yVelocity;
+        }
+    }
+
+    // Check collision with paddles
+    public void checkCollision(Paddle leftPaddle, Paddle rightPaddle) {
+        // Left paddle collision
+        if (x <= leftPaddle.x + leftPaddle.WIDTH && y >= leftPaddle.y && y <= leftPaddle.y + leftPaddle.HEIGHT) {
+            xVelocity = -xVelocity;
+        }
+        // Right paddle collision
+        if (x >= rightPaddle.x - rightPaddle.WIDTH && y >= rightPaddle.y && y <= rightPaddle.y + rightPaddle.HEIGHT) {
+            xVelocity = -xVelocity;
+        }
+    }
+
+    // Draw the ball
+    public void draw(Graphics g) {
+        g.fillRect(x, y, width, height);
+    }
+}
+
+public class PingPongGameWithArray extends JPanel implements ActionListener, KeyListener {
+
+    Paddle[] paddles = new Paddle[2];  // Array to hold both paddles (left and right)
+    Ball[] balls = new Ball[3];        // Array to hold multiple balls
+    Timer timer;
+    int[] scores = {0, 0};             // Array to store the scores of two players
+
+    public PingPongGameWithArray() {
+        setPreferredSize(new Dimension(800, 400));
+        setBackground(Color.BLACK);
+
+        // Initialize paddles
+        paddles[0] = new Paddle(50, 150);   // Left paddle
+        paddles[1] = new Paddle(730, 150);  // Right paddle
+
+        // Initialize multiple balls
+        for (int i = 0; i < balls.length; i++) {
+            balls[i] = new Ball(400, 200);  // All balls start from the center
+        }
+
+        timer = new Timer(30, this);
+        timer.start();
+
+        addKeyListener(this);
+        setFocusable(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        for (Ball ball : balls) {
+            ball.update();
+            ball.checkCollision(paddles[0], paddles[1]);
+
+            // Check if ball goes out of bounds (scoring)
+            if (ball.x < 0) {
+                scores[1]++;  // Right player scores
+                resetBall(ball);
+            } else if (ball.x > 800) {
+                scores[0]++;  // Left player scores
+                resetBall(ball);
+            }
+        }
+        repaint();
+    }
+
+    // Method to reset ball position
+    private void resetBall(Ball ball) {
+        ball.x = 400;
+        ball.y = 200;
+        ball.xVelocity = -ball.xVelocity;  // Change direction after scoring
+    }
+
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        g.setColor(Color.WHITE);
+
+        // Draw paddles
+        for (Paddle paddle : paddles) {
+            paddle.draw(g);
+        }
+
+        // Draw balls
+        for (Ball ball : balls) {
+            ball.draw(g);
+        }
+
+        // Draw scores
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("Player 1: " + scores[0], 100, 30);
+        g.drawString("Player 2: " + scores[1], 600, 30);
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_W) {
+            paddles[0].moveUp();
+        } else if (e.getKeyCode() == KeyEvent.VK_S) {
+            paddles[0].moveDown();
+        } else if (e.getKeyCode() == KeyEvent.VK_UP) {
+            paddles[1].moveUp();
+        } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+            paddles[1].moveDown();
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {}
+    @Override
+    public void keyTyped(KeyEvent e) {}
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Ping Pong Game with Arrays");
+        PingPongGameWithArray game = new PingPongGameWithArray();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(game);
+        frame.pack();
+        frame.setVisible(true);
+    }
+}
